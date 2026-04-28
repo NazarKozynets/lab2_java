@@ -1,22 +1,25 @@
+import java.util.concurrent.CountDownLatch;
+
 public class Worker extends Thread {
     int[] array;
     int startIndex;
     int endIndex;
     int threadIndex;
     SharedMin sharedMin;
+    CountDownLatch latch;
 
-    Worker(int[] array, int startIndex, int endIndex, int threadIndex, SharedMin sharedMin) {
+    Worker(int[] array, int startIndex, int endIndex,
+           int threadIndex, SharedMin sharedMin, CountDownLatch latch) {
         this.array = array;
         this.startIndex = startIndex;
         this.endIndex = endIndex;
         this.threadIndex = threadIndex;
         this.sharedMin = sharedMin;
+        this.latch = latch;
     }
 
     @Override
     public void run() {
-        int globalMin = sharedMin.getGlobalMin();
-
         int localMin = array[startIndex];
         int localMinIndex = startIndex;
 
@@ -29,7 +32,11 @@ public class Worker extends Thread {
 
         sharedMin.updateIfLower(localMin, localMinIndex);
 
-        System.out.println("Thread #" + (threadIndex + 1) + ": indexes [" + startIndex + ".." + endIndex + "], local min = " + localMin + ", index = " + localMinIndex);
+        System.out.println("Thread #" + (threadIndex + 1) +
+                ": indexes [" + startIndex + ".." + endIndex +
+                "], local min = " + localMin +
+                ", index = " + localMinIndex);
+
+        latch.countDown();
     }
 }
-

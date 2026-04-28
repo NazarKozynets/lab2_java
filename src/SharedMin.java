@@ -1,24 +1,41 @@
+import java.util.concurrent.atomic.AtomicReference;
+
 public class SharedMin {
-    private int globalMin;
-    private int globalMinIndex;
 
-    SharedMin(int globalMin, int globalMinIndex) {
-        this.globalMin = globalMin;
-        this.globalMinIndex = globalMinIndex;
-    }
+    static class MinPair {
+        final int value;
+        final int index;
 
-    public synchronized void updateIfLower(int localMin, int localMinIndex) {
-        if (localMin < globalMin) {
-            globalMin = localMin;
-            globalMinIndex = localMinIndex;
+        MinPair(int value, int index) {
+            this.value = value;
+            this.index = index;
         }
     }
 
-    public synchronized int getGlobalMin() {
-        return globalMin;
+    private final AtomicReference<MinPair> globalMin =
+            new AtomicReference<>(new MinPair(Integer.MAX_VALUE, -1));
+
+    public void updateIfLower(int localMin, int localMinIndex) {
+        while (true) {
+            MinPair current = globalMin.get();
+
+            if (localMin >= current.value) {
+                return;
+            }
+
+            MinPair newValue = new MinPair(localMin, localMinIndex);
+
+            if (globalMin.compareAndSet(current, newValue)) {
+                return;
+            }
+        }
     }
 
-    public synchronized int getGlobalMinIndex() {
-        return globalMinIndex;
+    public int getGlobalMin() {
+        return globalMin.get().value;
+    }
+
+    public int getGlobalMinIndex() {
+        return globalMin.get().index;
     }
 }

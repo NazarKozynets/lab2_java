@@ -1,3 +1,4 @@
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Main {
@@ -16,9 +17,11 @@ public class Main {
         int[] array = arrayUtil.GenerateArray(arrayLength);
 
         int randomIndex = ThreadLocalRandom.current().nextInt(0, array.length);
-        array[randomIndex] = -Math.abs(array[randomIndex]); // setting up the same value but negative
+        array[randomIndex] = -Math.abs(array[randomIndex]);
 
-        SharedMin sharedMin = new SharedMin(Integer.MAX_VALUE, -1);
+        SharedMin sharedMin = new SharedMin();
+
+        CountDownLatch latch = new CountDownLatch(threadCount);
 
         Worker[] workers = new Worker[threadCount];
 
@@ -30,15 +33,14 @@ public class Main {
                     bounds[0],
                     bounds[1],
                     i,
-                    sharedMin
+                    sharedMin,
+                    latch
             );
 
             workers[i].start();
         }
 
-        for (int i = 0; i < threadCount; i++) {
-            workers[i].join();
-        }
+        latch.await();
 
         System.out.println("Lowest value is: " + sharedMin.getGlobalMin());
         System.out.println("Index of lowest value is: " + sharedMin.getGlobalMinIndex());
